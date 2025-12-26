@@ -1,0 +1,5 @@
+langchain-huggingface
+transformers
+langgraph
+python-dotenv
+streamlit
