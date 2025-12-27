@@ -6,9 +6,11 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import BaseMessage, add_messages
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from typing import TypedDict, List, Annotated
 from dotenv import load_dotenv
 import streamlit as st
+import sqlite3
 
 load_dotenv()
 
@@ -63,7 +65,8 @@ graph.add_edge(START, "chat_node")
 graph.add_edge("chat_node", END)
 
 # 6- Persistence
-checkpoint = MemorySaver()
+conn= sqlite3.connect(database="memory.db",check_same_thread=False)
+checkpoint = SqliteSaver(conn=conn)
 workflow = graph.compile(checkpointer=checkpoint)
 
 # 7- Config
@@ -72,14 +75,29 @@ config = {"configurable": {"thread_id": thread_id}}
 
 # 8- Streamlit App
 st.title("Chatbot using LangGraph")
+st.sidebar.button("New Chat")
+st.sidebar.header("Past Conversation")
 
 # Initialize session state for chat history
+
+
+def load_conversation(thread_id1):
+      return workflow.get_state(config={'configurable':{'thread_id':thread_id1}}.values['messages'])
+
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
+if 'chat_thread' not in st.session_state:
+      st.session_state["chat_thread"] = []
+
+for thread_id in st.session_state["chat_thread"]:
+      if st.sidebar.button(str(thread_id)):
+           message = load_conversation(thread_id) 
+
 user_input = st.text_input("Ask something:")
 
-if st.button("Analyze") and user_input.strip():
+if st.button("Analyze"):
+  if user_input.strip():
     # Add user message to session state
     st.session_state.chat_history.append(HumanMessage(content=user_input))
 

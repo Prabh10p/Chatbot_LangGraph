@@ -3,3 +3,4 @@ transformers
 langgraph
 python-dotenv
 streamlit
+langgraph-checkpoint-sqlite
